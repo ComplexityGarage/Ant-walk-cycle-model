@@ -1,0 +1,365 @@
+#include <Servo.h> //Biblioteka odpowiedzialna za serwa
+
+ 
+Servo servoRFH;  //Tworzymy obiekt, dzięki któremu możemy odwołać się do serwa  //Aktualna pozycja serwa 0-180
+Servo servoRFV; 
+Servo servoRMH;
+Servo servoRMV;
+Servo servoRBH;
+Servo servoRBV;
+Servo servoLFH; 
+Servo servoLFV;
+Servo servoLMH;
+Servo servoLMV;
+Servo servoLBH;
+Servo servoLBV;
+
+char tryb=0;
+char oldtryb;
+int step=10;
+int poz1=0;
+int poz2=0;
+int stage=0; //dla stage: {3,0} RF-up, {1,2} LF-up
+
+//ustawienie nogi nazwane
+int rup=60;
+int rdown=130;
+int lup=130;
+int ldown=60;
+int mid=90;
+int rfront=120; // dla prawych nóg
+int rback=60;
+int lfront=60;
+int lback=120;
+int maxdown=80; // bardzo do zmiany!!!
+
+
+void setup() 
+{ 
+  Serial.begin(9600);
+  // R-right, L-left, F-front, M-middle, B-back, H-horizontal, V-vertical
+  servoRFH.attach(13);  
+  servoRFV.attach(12);
+  servoRMH.attach(11);  
+  servoRMV.attach(10);
+  servoRBH.attach(9);
+  servoRBV.attach(8);
+  servoLFH.attach(7);  
+  servoLFV.attach(6);
+  servoLMH.attach(5);  
+  servoLMV.attach(4);
+  servoLBH.attach(3);
+  servoLBV.attach(2);
+  //nogi RF, LM i RB działają synchronicznie, jak również nogi LF, RM i LB
+} 
+ 
+void loop() 
+{  
+  if(Serial.available() > 0){
+
+    char incoming = Serial.read();
+
+    if (isAlpha(incoming)) {   // tylko litery
+      tryb = incoming;
+    }
+    if(tryb != oldtryb){ //powrót do pozycji wyjściowej po zmianie trybu
+      oldtryb=tryb;
+      servoRFH.write(mid);
+      delay(50);
+      servoRMH.write(mid);
+      delay(50);
+      servoRBH.write(mid);
+      delay(50);
+      servoLFH.write(mid);
+      delay(50);
+      servoLMH.write(mid);
+      delay(50);
+      servoLBH.write(mid);
+      delay(100);
+    }
+  }
+  Serial.println(tryb);
+  executeCommand(tryb);
+  delay(10);
+}
+
+void executeCommand(char tryb){
+  switch (tryb) {
+    case 'f': //ruch do przodu
+      stage = (stage+1)%4; // przejście do kolejnego etapu kroku, mamy tylko 6 etapow więc dla stage=6 wacamy do 0
+      switch (stage) {  //etapy kroku
+        case 0:
+          servoRFH.write(rback);
+          delay(50);
+          servoRBH.write(rback);
+          delay(50);
+          servoLMH.write(lback);
+          delay(50);
+          //
+          servoLFH.write(lfront);
+          delay(50);
+          servoLBH.write(lfront);
+          delay(50);
+          servoRMH.write(rfront);
+          break;
+        case 1:
+          servoLFV.write(ldown);
+          delay(50);
+          servoLBV.write(ldown);
+          delay(50);
+          servoRMV.write(rdown);
+          delay(200); //przerwa aby robot się nie chybotał podczas podnoszeia góra duł
+          servoRFV.write(rup);
+          delay(50);
+          servoRBV.write(rup);
+          delay(50);
+          servoLMV.write(lup);
+          break;
+        case 2:
+          servoLFH.write(lback);
+          delay(50);
+          servoLBH.write(lback);
+          delay(50);
+          servoRMH.write(rback);
+          delay(50);
+          //
+          servoRFH.write(rfront);
+          delay(50);
+          servoRBH.write(rfront);
+          delay(50);
+          servoLMH.write(lfront);
+          break;
+        case 3:
+          servoRFV.write(rdown);
+          delay(50);
+          servoRBV.write(rdown);
+          delay(50);
+          servoLMV.write(ldown);
+          delay(200); //przerwa aby robot się nie chybotał podczas podnoszeia góra duł
+          servoLFV.write(lup);
+          delay(50);
+          servoLBV.write(lup);
+          delay(50);
+          servoRMV.write(rup);
+          break;
+        default:
+          break;
+      }
+      
+      delay(100);
+      break;
+    case 'b': //ruch do tyłu
+      //kopia ruchu do przodu tylko w odwrocie
+      stage = (stage+3)%4; //zmaina względem ruchu do przodu
+      switch (stage) {  
+        case 0:
+          servoRFH.write(rback);
+          delay(50);
+          servoRBH.write(rback);
+          delay(50);
+          servoLMH.write(lback);
+          delay(50);
+          //
+          servoLFH.write(lfront);
+          delay(50);
+          servoLBH.write(lfront);
+          delay(50);
+          servoRMH.write(rfront);
+          break;
+        case 1:
+          servoLFV.write(ldown);
+          delay(50);
+          servoLBV.write(ldown);
+          delay(50);
+          servoRMV.write(rdown);
+          delay(200); //przerwa aby robot się nie chybotał podczas podnoszeia góra duł
+          servoRFV.write(rup);
+          delay(50);
+          servoRBV.write(rup);
+          delay(50);
+          servoLMV.write(lup);
+          break;
+        case 2:
+          servoLFH.write(lback);
+          delay(50);
+          servoLBH.write(lback);
+          delay(50);
+          servoRMH.write(rback);
+          delay(50);
+          //
+          servoRFH.write(rfront);
+          delay(50);
+          servoRBH.write(rfront);
+          delay(50);
+          servoLMH.write(lfront);
+          break;
+        case 3:
+          servoRFV.write(rdown);
+          delay(50);
+          servoRBV.write(rdown);
+          delay(50);
+          servoLMV.write(ldown);
+          delay(200); //przerwa aby robot się nie chybotał podczas podnoszeia góra duł
+          servoLFV.write(lup);
+          delay(50);
+          servoLBV.write(lup);
+          delay(50);
+          servoRMV.write(rup);
+          break;
+      }
+      delay(100);
+      break;
+    case 'r': //obrut w prawo
+      stage = (stage+1)%4; 
+      switch (stage) {  
+        case 0:
+          servoRFH.write(rfront);
+          delay(50);
+          servoRBH.write(rfront);
+          delay(50);
+          servoLMH.write(lback);
+          delay(50);
+          //
+          servoLFH.write(lfront);
+          delay(50);
+          servoLBH.write(lfront);
+          delay(50);
+          servoRMH.write(rback);
+          break;
+        case 1:
+          servoLFV.write(ldown);
+          delay(50);
+          servoLBV.write(ldown);
+          delay(50);
+          servoRMV.write(rdown);
+          delay(200); 
+          servoRFV.write(rup);
+          delay(50);
+          servoRBV.write(rup);
+          delay(50);
+          servoLMV.write(lup);
+          break;
+        case 2:
+          servoLFH.write(lback);
+          delay(50);
+          servoLBH.write(lback);
+          delay(50);
+          servoRMH.write(rfront);
+          delay(50);
+          //
+          servoRFH.write(rback);
+          delay(50);
+          servoRBH.write(rback);
+          delay(50);
+          servoLMH.write(lfront);
+          break;
+        case 3:
+          servoRFV.write(rdown);
+          delay(50);
+          servoRBV.write(rdown);
+          delay(50);
+          servoLMV.write(ldown);
+          delay(200);
+          servoLFV.write(lup);
+          delay(50);
+          servoLBV.write(lup);
+          delay(50);
+          servoRMV.write(rup);
+          break;
+      }
+      delay(100);
+      break;
+    case 'l': //obrut w lewo 
+      stage = (stage+3)%4; //czym jest obrut w lewo jak nie obrotem w prawo w odwrocie
+      switch (stage) {  
+        case 0:
+          servoRFH.write(rfront);
+          delay(50);
+          servoRBH.write(rfront);
+          delay(50);
+          servoLMH.write(lback);
+          delay(50);
+          //
+          servoLFH.write(lfront);
+          delay(50);
+          servoLBH.write(lfront);
+          delay(50);
+          servoRMH.write(rback);
+          break;
+        case 1:
+          servoLFV.write(ldown);
+          delay(50);
+          servoLBV.write(ldown);
+          delay(50);
+          servoRMV.write(rdown);
+          delay(200); 
+          servoRFV.write(rup);
+          delay(50);
+          servoRBV.write(rup);
+          delay(50);
+          servoLMV.write(lup);
+          break;
+        case 2:
+          servoLFH.write(lback);
+          delay(50);
+          servoLBH.write(lback);
+          delay(50);
+          servoRMH.write(rfront);
+          delay(50);
+          //
+          servoRFH.write(rback);
+          delay(50);
+          servoRBH.write(rback);
+          delay(50);
+          servoLMH.write(lfront);
+          break;
+        case 3:
+          servoRFV.write(rdown);
+          delay(50);
+          servoRBV.write(rdown);
+          delay(50);
+          servoLMV.write(ldown);
+          delay(200);
+          servoLFV.write(lup);
+          delay(50);
+          servoLBV.write(lup);
+          delay(50);
+          servoRMV.write(rup);
+          break;
+      }
+      delay(100);
+      break;
+    case 's': //skok?
+      int rcharge=rdown;
+      int lcharge=ldown;
+      if (tryb=='s'){
+        servoRFV.write(rcharge);
+        servoRBV.write(rcharge);
+        servoLMV.write(lcharge);
+
+        servoLFV.write(lcharge);
+        servoLBV.write(lcharge);
+        servoRMV.write(rcharge);
+
+        rcharge=rcharge-1;
+        lcharge=lcharge+1;
+        tryb = Serial.read();
+      }
+      else{
+        servoRFV.write(maxdown);
+        servoRBV.write(maxdown);
+        servoLMV.write(maxdown);
+
+        servoLFV.write(maxdown);
+        servoLBV.write(maxdown);
+        servoRMV.write(maxdown);
+      }
+    default:
+      break;
+    }
+  //}
+  delay(100); 
+}                    
+
+                  
+
